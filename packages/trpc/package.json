@@ -1,11 +1,13 @@
 {
-  "name": "@acme/auth",
+  "name": "@acme/trpc",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./env": "./src/env.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    }
   },
   "license": "MIT",
   "scripts": {
@@ -16,6 +18,13 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
+  "dependencies": {
+    "@acme/auth": "workspace:*",
+    "@acme/db": "workspace:*",
+    "@trpc/server": "catalog:",
+    "superjson": "2.2.1",
+    "zod": "catalog:"
+  },
   "devDependencies": {
     "@acme/eslint-config": "workspace:*",
     "@acme/prettier-config": "workspace:*",
@@ -24,13 +33,5 @@
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@acme/prettier-config",
-  "dependencies": {
-    "@acme/db": "workspace:*",
-    "@better-fetch/fetch": "^1.1.12",
-    "@t3-oss/env-core": "^0.11.1",
-    "@t3-oss/env-nextjs": "^0.11.1",
-    "better-auth": "^1.0.6",
-    "zod": "^3.23.8"
-  }
+  "prettier": "@acme/prettier-config"
 }

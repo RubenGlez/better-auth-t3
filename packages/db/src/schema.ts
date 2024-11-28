@@ -1,80 +1,87 @@
-import { relations, sql } from "drizzle-orm";
-import { pgTable, primaryKey } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-export const Post = pgTable("post", (t) => ({
-  id: t.uuid().notNull().primaryKey().defaultRandom(),
-  title: t.varchar({ length: 256 }).notNull(),
-  content: t.text().notNull(),
-  createdAt: t.timestamp().defaultNow().notNull(),
-  updatedAt: t
-    .timestamp({ mode: "date", withTimezone: true })
-    .$onUpdateFn(() => sql`now()`),
-}));
-
-export const CreatePostSchema = createInsertSchema(Post, {
-  title: z.string().max(256),
-  content: z.string().max(256),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const user = pgTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("emailVerified").notNull(),
+  image: text("image"),
+  createdAt: timestamp("createdAt").notNull(),
+  updatedAt: timestamp("updatedAt").notNull(),
 });
 
-export const User = pgTable("user", (t) => ({
-  id: t.uuid().notNull().primaryKey().defaultRandom(),
-  name: t.varchar({ length: 255 }),
-  email: t.varchar({ length: 255 }).notNull(),
-  emailVerified: t.timestamp({ mode: "date", withTimezone: true }),
-  image: t.varchar({ length: 255 }),
-}));
-
-export const UserRelations = relations(User, ({ many }) => ({
-  accounts: many(Account),
-}));
-
-export const Account = pgTable(
-  "account",
-  (t) => ({
-    userId: t
-      .uuid()
-      .notNull()
-      .references(() => User.id, { onDelete: "cascade" }),
-    type: t
-      .varchar({ length: 255 })
-      .$type<"email" | "oauth" | "oidc" | "webauthn">()
-      .notNull(),
-    provider: t.varchar({ length: 255 }).notNull(),
-    providerAccountId: t.varchar({ length: 255 }).notNull(),
-    refresh_token: t.varchar({ length: 255 }),
-    access_token: t.text(),
-    expires_at: t.integer(),
-    token_type: t.varchar({ length: 255 }),
-    scope: t.varchar({ length: 255 }),
-    id_token: t.text(),
-    session_state: t.varchar({ length: 255 }),
-  }),
-  (account) => ({
-    compoundKey: primaryKey({
-      columns: [account.provider, account.providerAccountId],
-    }),
-  }),
-);
-
-export const AccountRelations = relations(Account, ({ one }) => ({
-  user: one(User, { fields: [Account.userId], references: [User.id] }),
-}));
-
-export const Session = pgTable("session", (t) => ({
-  sessionToken: t.varchar({ length: 255 }).notNull().primaryKey(),
-  userId: t
-    .uuid()
+export const session = pgTable("session", {
+  id: text("id").primaryKey(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  token: text("token").notNull().unique(),
+  createdAt: timestamp("createdAt").notNull(),
+  updatedAt: timestamp("updatedAt").notNull(),
+  ipAddress: text("ipAddress"),
+  userAgent: text("userAgent"),
+  userId: text("userId")
     .notNull()
-    .references(() => User.id, { onDelete: "cascade" }),
-  expires: t.timestamp({ mode: "date", withTimezone: true }).notNull(),
-}));
+    .references(() => user.id),
+  activeOrganizationId: text("activeOrganizationId"),
+});
 
-export const SessionRelations = relations(Session, ({ one }) => ({
-  user: one(User, { fields: [Session.userId], references: [User.id] }),
-}));
+export const account = pgTable("account", {
+  id: text("id").primaryKey(),
+  accountId: text("accountId").notNull(),
+  providerId: text("providerId").notNull(),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id),
+  accessToken: text("accessToken"),
+  refreshToken: text("refreshToken"),
+  idToken: text("idToken"),
+  accessTokenExpiresAt: timestamp("accessTokenExpiresAt"),
+  refreshTokenExpiresAt: timestamp("refreshTokenExpiresAt"),
+  scope: text("scope"),
+  password: text("password"),
+  createdAt: timestamp("createdAt").notNull(),
+  updatedAt: timestamp("updatedAt").notNull(),
+});
+
+export const verification = pgTable("verification", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt"),
+  updatedAt: timestamp("updatedAt"),
+});
+
+export const organization = pgTable("organization", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").unique(),
+  logo: text("logo"),
+  createdAt: timestamp("createdAt").notNull(),
+  metadata: text("metadata"),
+});
+
+export const member = pgTable("member", {
+  id: text("id").primaryKey(),
+  organizationId: text("organizationId")
+    .notNull()
+    .references(() => organization.id),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id),
+  role: text("role").notNull(),
+  createdAt: timestamp("createdAt").notNull(),
+});
+
+export const invitation = pgTable("invitation", {
+  id: text("id").primaryKey(),
+  organizationId: text("organizationId")
+    .notNull()
+    .references(() => organization.id),
+  email: text("email").notNull(),
+  role: text("role"),
+  status: text("status").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  inviterId: text("inviterId")
+    .notNull()
+    .references(() => user.id),
+});

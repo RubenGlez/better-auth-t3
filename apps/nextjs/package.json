@@ -14,11 +14,10 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@acme/api": "workspace:*",
     "@acme/auth": "workspace:*",
     "@acme/db": "workspace:*",
+    "@acme/trpc": "workspace:*",
     "@acme/ui": "workspace:*",
-    "@acme/validators": "workspace:*",
     "@t3-oss/env-nextjs": "^0.11.1",
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",
